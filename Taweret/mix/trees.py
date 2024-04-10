@@ -110,6 +110,15 @@ class Trees(BaseMixer):
         self.diffwtsprior = False
         self.tauvec = None
         self.betavec = None
+        self.selectp = False
+        self.maxd = 999
+
+        # Random path defauls
+        self.rpath = False
+        self.shape1 = 2
+        self.shape2 = 2
+        self.gamma = 0.5
+        self.q = 4.0
 
         # Define the roots for the output files
         self.xroot = "x"
@@ -230,7 +239,11 @@ class Trees(BaseMixer):
             base: float = 0.95,
             overallsd: float = None,
             overallnu: int = 10,
-            inform_prior: bool = True,
+            inform_prior: bool = False,
+            rpath = False,
+            a1 = 2,
+            a2 = 2,
+            q = 4,
             tauvec: bool = None,
             betavec: bool = None):
         '''
@@ -261,6 +274,14 @@ class Trees(BaseMixer):
         :param bool inform_prior:
             Controls if the informative or non-informative prior is used.
             Specify true for the informative prior.
+        :param bool rpath:
+            True if using the random path model
+        :param float a1:
+            The first shape parameter for the Beta prior on the bandwith parameter in the random path model.
+        :param float a2:
+            The second shape parameter for the Beta prior on the bandwith parameter in the random path model.
+        :param float q:
+            The shape parameter in the random path splitting probabilities. 
         :param np.ndarray tauvec:
             A K-dimensional array (where K is the number of models) that
             contains the prior standard deviation of the terminal node
@@ -288,6 +309,11 @@ class Trees(BaseMixer):
             'overallsd': overallsd,
             'overallnu': overallnu,
             'inform_prior': inform_prior,
+            'rpath':rpath,
+            'q':q,
+            'shape1':a1,
+            'shape2':a2,
+            'gamma':a1/(a1+a2),
             'tauvec': tauvec,
             'betavec': betavec}
 
@@ -438,8 +464,11 @@ class Trees(BaseMixer):
             sigma_post = self.sdraws[:, 0]
         else:
             sigma_post = self.sdraws
-
-        self._posterior = sigma_post
+        
+        if self.rpath:
+            self._posterior = {"sigma":sigma_post,"gamma":self.gdraws}
+        else:
+            self._posterior = sigma_post
 
         return res
 
@@ -473,6 +502,8 @@ class Trees(BaseMixer):
             X = np.array(X)
         if (len(X.shape) == 1):  # If shape is (n, ), change it to (n, 1):
             X = X.reshape(len(X), 1)
+
+        self.X_test = X
 
         # Get predictions from the model set at X's
         fhat_list = []
@@ -720,7 +751,7 @@ class Trees(BaseMixer):
             self.beta = 1 / self.ntree
         else:
             self.tau = 1 / (2 * np.sqrt(self.ntree) * self.k)
-            self.beta = 1 / (2 * self.ntree)
+            self.beta = 1 / (self.nummodels * self.ntree)
 
         # overall lambda calibration
         if self.overallsd is not None:
@@ -746,6 +777,7 @@ class Trees(BaseMixer):
                 self.fpath.glob(
                     self.modelname +
                     ".sdraws*")))
+                    
         mdraws = []
         for f in mdraw_files:
             read = open(f, "r")
@@ -789,6 +821,24 @@ class Trees(BaseMixer):
             self.sigma_lower[j] = np.quantile(self.sdraws[:, j], self.q_lower)
             self.pred_upper[j] = np.quantile(self.mdraws[:, j], self.q_upper)
             self.sigma_upper[j] = np.quantile(self.sdraws[:, j], self.q_upper)
+
+        if self.rpath:
+            gdraw_files = sorted(
+            list(
+                self.fpath.glob(
+                    self.modelname +
+                    ".rpg*")))
+
+            gdraws = []
+            for f in gdraw_files:
+                read = open(f, "r")
+                lines = read.readlines()
+                if lines[0] != '\n' and lines[1] != '\n':  # If it's nonempty
+                    gdraws.append(np.loadtxt(f))
+
+            self.gdraws = gdraws[0].reshape(self.ndpost, self.ntree)  
+
+
 
     def _read_in_wts(self):
         """
@@ -949,6 +999,9 @@ class Trees(BaseMixer):
         [self._update_h_args(arg) for arg in ["pbd", "pb", "stepwpert",
                                               "probchv", "minnumbot"]]
 
+        if self.rpath:
+            self.pbd = 1.0
+
     def _set_wts_prior(self, betavec, tauvec):
         """
         Private function, set the non-informative weights prior when
@@ -1026,12 +1079,19 @@ class Trees(BaseMixer):
             self.power,
             self.baseh,
             self.powerh,
+            self.maxd,
             self.tc,
             self.sroot,
             self.chgvroot,
             self.froot,
             self.fsdroot,
             self.inform_prior,
+            self.selectp,
+            self.rpath,
+            self.gamma,
+            self.q,
+            self.shape1,
+            self.shape2,
             self.wproot,
             self.diffwtsprior,
             self.pbd,
