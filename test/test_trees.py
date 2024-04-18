@@ -150,8 +150,8 @@ mix = Trees(model_dict=model_dict)
 # ---------------------------------------------
 from Taweret.models.polynomial_models import polynomal_model
 
-f1 = polynomal_model(2, 5, -4, 1)
-f2 = polynomal_model(-2, 5, 4, 1)
+f1 = polynomal_model(2, -10, -4, 1)
+f2 = polynomal_model(-2, -10, 4, 1)
 model_dict = {'model1': f1, 'model2': f2}
 
 x_train = np.linspace(-4,4,20)
@@ -161,7 +161,7 @@ f0_test = x_test**2
 
 
 mix = Trees(model_dict=model_dict,local_openbt_path = "/home/johnyannotty/Documents/openbt/src")
-mix.set_prior(ntree = 10, k = 1.5, overallsd=0.01, overallnu=10,rpath = False, a1 = 2, a2 = 10)           
+mix.set_prior(ntree = 10, k = 1.0, overallsd=0.01, overallnu=10,rpath = True, a1 = 2, a2 = 10)           
 
 x_train.shape
 
