@@ -31,34 +31,31 @@ from Taweret.mix.trees import Trees
 def test_init():
     # check passing of variables into Multivariate class
     assert mix.model_dict == model_dict, "class object self.model_dict not set."
-    assert mix.nummodels == len(
-        model_dict), "class object self.nummodels not set."
+    assert mix.nummodels == len(model_dict), "class object self.nummodels not set."
 
 
 # Test the mixing fun
 def test_mixing():
-    x_train = np.loadtxt(
-        taweret_wd + 'test/bart_bmm_test_data/2d_x_train.txt').reshape(80, 2)
+    x_train = np.loadtxt(taweret_wd + 'test/bart_bmm_test_data/2d_x_train.txt').reshape(80, 2)
     x_train = x_train.reshape(2, 80).transpose()
 
-    y_train = np.loadtxt(
-        taweret_wd + 'test/bart_bmm_test_data/2d_y_train.txt').reshape(80, 1)
+    y_train = np.loadtxt(taweret_wd + 'test/bart_bmm_test_data/2d_y_train.txt').reshape(80, 1)
 
     # Set prior information
+    sighat = 0.01/np.sqrt(7/5)
     mix.set_prior(
         k=2.5,
         ntree=30,
-        overallnu=5,
-        overallsd=0.01,
+        nu=5,
+        sighat=sighat,
         inform_prior=False)
 
     # Check tuning & hyper parameters
-    assert mix.k == 2.5, "class object k is not set."
-    assert mix.ntree == 30, "class object ntree is not set."
-    assert mix.overallnu == 5, "class object nu is not set."
-    assert mix.overallsd == 0.01, "class object overallsd is not set."
-    assert mix.overalllambda == 0.01**2, "class object overalllambda is not set."
-    assert mix.inform_prior == False, "class object inform_prior is not set."
+    assert mix.obt.k == 2.5, "class object k is not set."
+    assert mix.obt.ntree == 30, "class object ntree is not set."
+    assert mix.obt.nu == 5, "class object nu is not set."
+    assert mix.obt.lam == 0.01**2, "class object lambda is not set."
+    assert mix.obt.inform_prior == False, "class object inform_prior is not set."
 
     # Train the model
     fit = mix.train(
@@ -68,14 +65,16 @@ def test_mixing():
         nadapt=2000,
         nskip=2000,
         adaptevery=500,
-        minnumbot=4)
+        minnumbot=4,
+        tc = 4)
 
     # Check the mcmc objects
-    assert mix.ndpost == 10000, "class object ndpost is not set."
-    assert mix.nadapt == 2000, "class object nadapt is not set."
-    assert mix.adaptevery == 500, "class object adaptevery is not set."
-    assert mix.nskip == 2000, "class object nskip is not set."
-    assert mix.minnumbot == 4, "class object minnumbot is not set."
+    assert mix.obt.ndpost == 10000, "class object ndpost is not set."
+    assert mix.obt.nadapt == 2000, "class object nadapt is not set."
+    assert mix.obt.adaptevery == 500, "class object adaptevery is not set."
+    assert mix.obt.nskip == 2000, "class object nskip is not set."
+    assert mix.obt.minnumbot == 4, "class object minnumbot is not set."
+
 
 
 # Test the mean predictions
@@ -89,9 +88,7 @@ def test_predict():
                       x2_test.reshape(x1_test.size,)]).transpose()
 
     # Read in test results
-    pmean_test = np.loadtxt(
-        taweret_wd +
-        'test/bart_bmm_test_data/2d_pmean.txt')
+    pmean_test = np.loadtxt(taweret_wd + 'test/bart_bmm_test_data/2d_pmean.txt')
     eps = 0.10
 
     # Get predictions
@@ -115,9 +112,7 @@ def test_predict_wts():
 
     # Read in test results
     wteps = 0.05
-    wmean_test = np.loadtxt(
-        taweret_wd +
-        'test/bart_bmm_test_data/2d_wmean.txt')
+    wmean_test = np.loadtxt(taweret_wd + 'test/bart_bmm_test_data/2d_wmean.txt')
 
     # Test the values
     werr = np.mean(np.abs(wmean - wmean_test))
@@ -127,8 +122,7 @@ def test_predict_wts():
 # Test sigma
 def test_sigma():
     sig_eps = 0.05
-    assert np.abs((np.mean(mix.posterior) - 0.1)
-                  ) < sig_eps, "Inaccurate sigma calculation."
+    assert np.abs((np.mean(mix.posterior) - 0.1)) < sig_eps, "Inaccurate sigma calculation."
 
 
 # ---------------------------------------------
@@ -140,5 +134,5 @@ f2 = sin_cos_exp(13, 6, -np.pi, -np.pi)
 model_dict = {'model1': f1, 'model2': f2}
 
 
-# mix = Trees(model_dict = model_dict, local_openbt_path = "/home/johnyannotty/Documents/openbt/src")
-mix = Trees(model_dict=model_dict)
+mix = Trees(model_dict = model_dict, local_openbt_path = "/home/johnyannotty/Documents/openbt/src")
+#mix = Trees(model_dict=model_dict)
