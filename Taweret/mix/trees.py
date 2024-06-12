@@ -1,11 +1,10 @@
 # Name:
 # trees.py
 # Author: John Yannotty (yannotty.1@osu.edu)
-# Desc: Defines the tree mixing class, which is an interface for BART-BMM
 #
 # Start Date: 10/05/22
 # Version: 1.0
-########################################################################
+
 from logging import raiseExceptions
 import numpy as np
 import matplotlib.pyplot as plt
@@ -30,9 +29,11 @@ from openbtmixing.openbtmixing import Openbtmix
 
 class Trees(BaseMixer):
     r'''
-        Constructor for the Trees mixing class, which implements a mean-mixing strategy.
-        The weight functions are modeled using Bayesian Assitive Regression Trees (BART).
-        Please read the installation page of the documentation to ensure the BART-BMM Ubuntu
+        Constructor for the Trees mixing class, which implements 
+        a mean-mixing strategy. The weight functions are modeled 
+        using Bayesian Additive Regression Trees (BART). 
+        Please read the installation 
+        page of the documentation to ensure the BART-BMM Ubuntu
         package is downloaded and installed.
 
         .. math::
@@ -47,14 +48,16 @@ class Trees(BaseMixer):
             mix = Trees(model_dict = model_dict)
 
             # Set prior information
-            mix.set_prior(k=2.5,ntree=30,overallnu=5,overallsd=0.01,inform_prior=False)
+            mix.set_prior(k=2.5,ntree=30,overallnu=5,
+                        overallsd=0.01,inform_prior=False)
 
             # Train the model
-            fit = mix.train(X=x_train, y=y_train, ndpost = 10000, nadapt = 2000, nskip = 2000, adaptevery = 500, minnumbot = 4)
+            fit = mix.train(X=x_train, y=y_train, ndpost = 10000, nadapt = 2000, 
+                            nskip = 2000, adaptevery = 500, minnumbot = 4)
 
             # Get predictions and posterior weight functions.
             ppost, pmean, pci, pstd = mix.predict(X = x_test, ci = 0.95)
-            wpost, wmean, wci, wstd = mix.predict_weights(X = x_test, ci = 0.95)
+            wpost, wmean, wci, wstd = mix.predict_weights(X = x_test,ci = 0.95)
 
     '''
 
@@ -125,7 +128,7 @@ class Trees(BaseMixer):
 
         Returns:
         ---------
-        :returns: The posterior of the error standard deviation .
+        :returns: The posterior of the error standard deviation.
         :rtype: np.ndarray
 
         '''
@@ -134,8 +137,8 @@ class Trees(BaseMixer):
     @property
     def prior(self):
         '''
-        Returns a dictionary of the hyperparameter settings used in the various
-        prior distributions.
+        Returns a dictionary of the hyperparameter settings 
+        used in the various prior distributions.
 
         Parameters:
         -----------
@@ -161,8 +164,9 @@ class Trees(BaseMixer):
             nu: int = 10,
             inform_prior: bool = True):
         '''
-        Sets the hyperparameters in the tree and terminal node priors. Also
-        specifies if an informative or non-informative prior will be used when mixing EFTs.
+        Sets the hyperparameters in the tree and terminal node priors. 
+        Also specifies if an informative or non-informative prior will 
+        be used when mixing EFTs.
 
         Parameters:
         -----------
@@ -174,7 +178,8 @@ class Trees(BaseMixer):
             for the error standard deviation. Set to 1 for
             homoscedastic variance assumption.
         :param float k:
-            The tuning parameter in the prior variance of the terminal node
+            The tuning parameter in the prior variance of 
+            the terminal node
             parameter prior. This is a value greater than zero.
         :param float power:
             The power parameter in the tree prior.
@@ -182,7 +187,8 @@ class Trees(BaseMixer):
             The base parameter in the tree prior.
         :param float overallsd:
             An initial estimate of the erorr standard deviation.
-            This value is used to calibrate the scale parameter in variance prior.
+            This value is used to calibrate the scale parameter in 
+            variance prior.
         :param float overallnu:
             The shape parameter in the error variance prior.
         :param bool inform_prior:
@@ -219,10 +225,11 @@ class Trees(BaseMixer):
 
         Returns:
         --------
-        :returns: A dictionary which contains relevant information to the model such as
-            values of tuning parameters. The MCMC results are written to a text file
-            and stored in a temporary directory as defined by the fpath key in the
-            results dictionary.
+        :returns: A dictionary which contains relevant information to the 
+            model such as values of tuning parameters. 
+            The MCMC results are written to a text file
+            and stored in a temporary directory as defined by 
+            the fpath key in the results dictionary.
         :rtype: dict
 
         '''
@@ -250,12 +257,16 @@ class Trees(BaseMixer):
         s_matrix = np.concatenate(shat_list, axis=1)
 
         # Run the train command in openbtmixing
-        res = self.obt.train(x_train = X, y_train = y, f_train = f_matrix, s_train = s_matrix, **kwargs)
+        res = self.obt.train(x_train = X, y_train = y, f_train = f_matrix, 
+                             s_train = s_matrix, **kwargs)
 
-        # Get predictions at training points -- more importanlty, get the posterior of sigma
+        # Get predictions at training points -- more importanlty, 
+        # get the posterior of sigma
         # ci level doesn't matter here, all we want is the posterior
-        # using tc*2 just to get a small subset of data that won't break the array structures when reading in results
-        res_sig = self.obt.predict(X[0:(self.obt.tc*2),], f_matrix[0:(self.obt.tc*2),], ci=0.68)
+        # using tc*2 just to get a small subset of data that 
+        # won't break the array structures when reading in results
+        res_sig = self.obt.predict(X[0:(self.obt.tc*2),], 
+                                   f_matrix[0:(self.obt.tc*2),], ci=0.68)
         self._posterior = res_sig["sigma"]["draws"][:,0]
 
         return res
@@ -263,22 +274,27 @@ class Trees(BaseMixer):
 
     def predict(self, X: np.ndarray, ci: float = 0.95):
         '''
-        Obtain the posterior predictive distribution of the mixed-model at a set
-        of inputs X.
+        Obtain the posterior predictive distribution of the mixed-model at 
+        a setof inputs X.
 
         Parameters:
         ----------
         :param np.ndarray X: design matrix of testing inputs.
-        :param float ci: credible interval width, must be a value within the interval (0,1).
+        :param float ci: credible interval width, must be a value 
+                        within the interval (0,1).
 
         Returns:
         --------
         :returns: The posterior prediction draws and summaries.
         :rtype: np.ndarray, np.ndarray, np.ndarray, np.ndarray
-        :return value: the posterior predictive distribution evaluated at the specified test points
-        :return value: the posterior mean of the mixed-model at each input in X.
-        :return value: the pointwise credible intervals at each input in X.
-        :return value: the posterior standard deviation of the mixed-model at each input in X.
+        :return value: the posterior predictive distribution 
+                        evaluated at the specified test points
+        :return value: the posterior mean of the mixed-model at 
+                        each input in X.
+        :return value: the pointwise credible intervals at each 
+                        input in X.
+        :return value: the posterior standard deviation of the 
+                        mixed-model at each input in X.
         '''
 
         # Set q_lower and q_upper
@@ -332,16 +348,20 @@ class Trees(BaseMixer):
         Parameters:
         ----------
         :param np.ndarray X: design matrix of testing inputs.
-        :param float ci: credible interval width, must be a value within the interval (0,1).
+        :param float ci: credible interval width, must be a value 
+                        within the interval (0,1).
 
         Returns:
         --------
         :returns: The posterior weight function draws and summaries.
         :rtype: np.ndarray, np.ndarray, np.ndarray, np.ndarray
-        :return value: the posterior draws of the weight functions at each input in X.
-        :return value: posterior mean of the weight functions at each input in X.
+        :return value: the posterior draws of the weight functions at 
+                        each input in X.
+        :return value: posterior mean of the weight functions at each input 
+                        in X.
         :return value: pointwise credible intervals for the weight functions.
-        :return value: posterior standard deviation of the weight functions at each input in X.
+        :return value: posterior standard deviation of the weight functions 
+                        at each input in X.
         '''
 
         # Set q_lower and q_upper

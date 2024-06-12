@@ -48,3 +48,14 @@ The ``BaseMixer`` is an abstract base class which has certain methods that need 
    autopep8 --recursive --in-place --aggresive --aggresive .
 
 - Step 5: Create a pull request for your addition. This should trigger a github action. Should the action fail, please try to diagnose the failure. Always make sure the test execute successfully, locally before opening a pull request
+
+
+Adding Existing Software
+========================
+Some users may wish to contribute to Taweret by connecting an existing model mixing code base from an outside repository. 
+This can easily be done by following the steps above and abiding by the minimal requirements outlined in the base mixer class.
+The Trees class is an example of how to implement existing software within Taweret. This class simply wraps existing functions from the
+``openbtmixing`` python package. Each of the Trees methods simply call the corresponding method from an instance of the ``openbtmixing`` class.
+In some cases, such as the ``set_prior()`` method, the trees class simply calls the ``openbtmixing`` version of ``set_prior()``. In other cases, 
+such as the constructor or the ``train()`` methods, the Trees class involves some additional lines of code before calling the ``openbtmixing`` instance,
+in order to comply with the Taweret architecture. 
